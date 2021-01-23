@@ -1,6 +1,7 @@
 #ifndef HEADER_BLE2MQTT
 #define HEADER_BLE2MQTT
 
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"

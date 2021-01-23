@@ -15,6 +15,9 @@
 #include "tbt.h"
 #include "tmqtt.h"
 #include "ble2mqtt/ble2mqtt.h"
+#ifdef TASKDEBUG
+#include "tdebug.h"
+#endif
 
 static const char *TAG = "main";
 
@@ -36,7 +39,6 @@ void app_main(void)
     fflush(stdout);
 #endif
 
-    //Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -53,8 +55,12 @@ void app_main(void)
         while (1)
             ;
     }
+    ble2mqtt_init(ble2mqtt);
 
     xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
     xTaskCreate(vTaskMqtt, "task_mqtt", 2048, (void *)ble2mqtt, 10, NULL);
     xTaskCreate(vTaskBt, "task_bt", 2048, (void *)ble2mqtt, 12, NULL);
+#ifdef TASKDEBUG
+    xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);
+#endif
 }
