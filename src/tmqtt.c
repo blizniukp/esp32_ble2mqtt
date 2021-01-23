@@ -23,7 +23,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
+        msg_id = esp_mqtt_client_subscribe(client, MQTT_TOPIC_SUBSCRIBE, MQTT_QOS);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
