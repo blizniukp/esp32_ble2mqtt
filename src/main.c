@@ -58,7 +58,7 @@ void app_main(void)
     ble2mqtt_init(ble2mqtt);
 
     xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
-    xTaskCreate(vTaskMqtt, "task_mqtt", 2048, (void *)ble2mqtt, 10, NULL);
+    xTaskCreate(vTaskMqtt, "task_mqtt", (2048 * 6), (void *)ble2mqtt, 10, NULL);
     xTaskCreate(vTaskBt, "task_bt", 2048, (void *)ble2mqtt, 12, NULL);
 #ifdef TASKDEBUG
     xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);

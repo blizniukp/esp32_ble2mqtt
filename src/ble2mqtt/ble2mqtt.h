@@ -7,7 +7,7 @@
 #include "freertos/event_groups.h"
 
 #define BLE2MQTT_WIFI_CONNECTED_BIT BIT0
-#define BLE2MQTT_WIFI_DISCONNECTED_BIT BIT1
+#define BLE2MQTT_MQTT_CONNECTED_BIT BIT1
 
 typedef struct ble2mqtt_def
 {

@@ -35,7 +35,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         }
         else if (WIFI_EVENT_STA_DISCONNECTED == event_id)
         {
-            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_DISCONNECTED_BIT);
             xEventGroupClearBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_CONNECTED_BIT);
             ESP_ERROR_CHECK(esp_wifi_connect());
         }
@@ -52,7 +51,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
             ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
             xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_CONNECTED_BIT);
-            xEventGroupClearBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_DISCONNECTED_BIT);
         }
     }
     else

@@ -21,7 +21,7 @@ void vTaskDebug(void *pvParameters)
     while (1)
     {
         bits = xEventGroupGetBits(ble2mqtt->s_event_group);
-        ESP_LOGI(TAG, "\tConnected Bit: %d, Disconnected Bit: %d", (bits & BLE2MQTT_WIFI_CONNECTED_BIT), (bits & BLE2MQTT_WIFI_DISCONNECTED_BIT));
+        ESP_LOGI(TAG, "Wifi: %d, Mqtt: %d", (bits & BLE2MQTT_WIFI_CONNECTED_BIT),(bits & BLE2MQTT_MQTT_CONNECTED_BIT));
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 

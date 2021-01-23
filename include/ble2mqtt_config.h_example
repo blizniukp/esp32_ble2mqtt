@@ -2,7 +2,12 @@
 #define HEADER_BLE2MQTT_CONFIG
 
 /* WIFI settings */
+/*      wifi ssid */
 #define WIFI_SSID ""
+/*      wifi password */
 #define WIFI_PASSWORD ""
 
+/* MQTT settings */
+/*      Broker uri. Examples: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html#uri */
+#define MQTT_BROKER_URI "test.mosquitto.org"
 #endif
