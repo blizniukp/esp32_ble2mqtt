@@ -44,7 +44,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    xTaskCreate(vTaskWifi, "task_wifi", 2048, NULL, 10, NULL);
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), NULL, 8, NULL);
     xTaskCreate(vTaskMqtt, "task_mqtt", 2048, NULL, 10, NULL);
-    xTaskCreate(vTaskBt, "task_bt", 2048, NULL, 10, NULL);
+    xTaskCreate(vTaskBt, "task_bt", 2048, NULL, 12, NULL);
 }

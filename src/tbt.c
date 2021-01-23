@@ -18,6 +18,7 @@ void vTaskBt(void *pvParameters)
     while (1)
     {
         //TODO: dodać obsługę BT
+        ESP_LOGD(TAG, "Task bt");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
