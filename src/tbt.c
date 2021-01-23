@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"

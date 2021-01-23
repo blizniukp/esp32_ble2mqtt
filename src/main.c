@@ -14,6 +14,7 @@
 #include "twifi.h"
 #include "tbt.h"
 #include "tmqtt.h"
+#include "ble2mqtt/ble2mqtt.h"
 
 static const char *TAG = "main";
 
@@ -43,10 +44,17 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), NULL, 8, NULL);
-    xTaskCreate(vTaskMqtt, "task_mqtt", 2048, NULL, 10, NULL);
-    xTaskCreate(vTaskBt, "task_bt", 2048, NULL, 12, NULL);
+    ble2mqtt_t *ble2mqtt = ble2mqtt_create();
+    if (!ble2mqtt)
+    {
+        ESP_LOGE(TAG, "malloc error!");
+        while (1)
+            ;
+    }
+
+    xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
+    xTaskCreate(vTaskMqtt, "task_mqtt", 2048, (void *)ble2mqtt, 10, NULL);
+    xTaskCreate(vTaskBt, "task_bt", 2048, (void *)ble2mqtt, 12, NULL);
 }

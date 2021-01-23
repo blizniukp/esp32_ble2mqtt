@@ -5,20 +5,22 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_DISCONNECTED_BIT BIT1
-#define WIFI_FAIL_BIT BIT2
+#define BLE2MQTT_WIFI_CONNECTED_BIT BIT0
+#define BLE2MQTT_WIFI_DISCONNECTED_BIT BIT1
 
 typedef struct ble2mqtt_def
 {
     EventGroupHandle_t s_event_group;
 } ble2mqtt_t;
 
-static ble2mqtt_t ble2mqtt;
+/**
+ * Create instance of ble2mqtt_t struct
+ */
+ble2mqtt_t* ble2mqtt_create(void);
 
 /**
  * Initialize ble2mqtt struct
  */
-void ble2mqtt_init(void);
+void ble2mqtt_init(ble2mqtt_t *ble2mqtt);
 
 #endif
