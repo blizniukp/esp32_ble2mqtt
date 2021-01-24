@@ -2,17 +2,56 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
+#include "freertos/semphr.h"
 #include "freertos/event_groups.h"
+#include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "mqtt_client.h"
+#include <cJSON.h>
 
 #include "tmqtt.h"
 #include "ble2mqtt/ble2mqtt.h"
 #include "ble2mqtt_config.h"
 
 static const char *TAG = "tmqtt";
+
+/**
+ * Parse new message and add to queue
+ */
+static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event)
+{
+    ESP_LOGD(TAG, "TOPIC=%.*s", event->topic_len, event->topic);
+    ESP_LOGD(TAG, "DATA=%.*s", event->data_len, event->data);
+    if (event->data_len == 0 || event->topic_len == 0)
+        return;
+
+    if (strstr(event->topic, "devList")) //Got device list
+    {
+        ESP_LOGD(TAG, "Got devList");
+        if (xSemaphoreTake(ble2mqtt->xMutexDevices, (TickType_t)10) == pdTRUE)
+        {
+            ble2mqtt->devices_len = 0;
+            cJSON *root = cJSON_Parse(event->data);
+            int dev_arr_len = cJSON_GetArraySize(root);
+            ESP_LOGD(TAG, "dev_arr_len: %d\n", dev_arr_len);
+            for (int i = 0; i < dev_arr_len; i++)
+            {
+                cJSON *dev = cJSON_GetArrayItem(root, i);
+                strncpy(ble2mqtt->devices[i]->name, cJSON_GetObjectItem(dev, "name")->valuestring, BLE2MQTT_DEV_MAX_NAME);
+                strncpy(ble2mqtt->devices[i]->mac, cJSON_GetObjectItem(dev, "mac")->valuestring, BTL2MQTT_DEV_MAC_LEN);
+                ble2mqtt->devices_len++;
+                if (ble2mqtt->devices_len >= BTL2MQTT_DEV_MAX_LEN)
+                {
+                    ESP_LOGE(TAG, "Max devices!");
+                    break;
+                }
+            }
+            xSemaphoreGive(ble2mqtt->xMutexDevices);
+            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT);
+        }
+    }
+}
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
@@ -44,8 +83,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        mqtt_new_message(ble2mqtt, event);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -80,24 +118,31 @@ void vTaskMqtt(void *pvParameters)
 
     while (1)
     {
-        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for wifi
-        if (!(bits & BLE2MQTT_WIFI_CONNECTED_BIT))
-            continue;
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_WIFI_CONNECTED_BIT))
+        {
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for wifi
+            if (!(bits & BLE2MQTT_WIFI_CONNECTED_BIT))
+                continue;
+        }
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_CONNECTED_BIT))
+        {
+            ESP_LOGI(TAG, "Try to connect to MQTT");
+            esp_mqtt_client_start(client);
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT, pdFALSE, pdFALSE, (5000 / portTICK_PERIOD_MS)); //Wait 5 sec for mqtt
+            if (!(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
+                continue;
+        }
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
+        {
+            ESP_LOGI(TAG, "Try to get dev list");
+            msg_id = esp_mqtt_client_publish(client, "/ble2mqtt/app/getDevList", "{}", 0, MQTT_QOS, 1);
+            ESP_LOGD(TAG, "Pub message, msg_id=%d", msg_id);
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
+            if (!(bits & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
+                continue;
+            ESP_LOGI(TAG, "Got device list");
+        }
 
-        ESP_LOGI(TAG, "Try to connect to MQTT");
-        esp_mqtt_client_start(client);
-        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT, pdFALSE, pdFALSE, (5000 / portTICK_PERIOD_MS)); //Wait 5 sec for mqtt
-        if (!(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
-            continue;
-
-        ESP_LOGI(TAG, "Try to get dev list");
-        msg_id = esp_mqtt_client_publish(client, "/ble2mqtt/app/getDevList", "{}", 0, MQTT_QOS, 1);
-        ESP_LOGD(TAG, "Pub message, msg_id=%d", msg_id);
-        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
-        if (!(bits & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
-            continue;
-
-        ESP_LOGI(TAG, "Got device list");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 

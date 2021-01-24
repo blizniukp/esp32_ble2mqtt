@@ -55,7 +55,12 @@ void app_main(void)
         while (1)
             ;
     }
-    ble2mqtt_init(ble2mqtt);
+    if (ble2mqtt_init(ble2mqtt) == false)
+    {
+        ESP_LOGE(TAG, "ble2mqtt_init error!");
+        while (1)
+            ;
+    }
 
     xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
     xTaskCreate(vTaskMqtt, "task_mqtt", (2048 * 6), (void *)ble2mqtt, 10, NULL);
