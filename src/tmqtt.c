@@ -18,16 +18,19 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
-    // your_context_t *context = event->context;
+    ble2mqtt_t *ble2mqtt = (ble2mqtt_t *)event->user_context;
+
     switch (event->event_id)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = esp_mqtt_client_subscribe(client, MQTT_TOPIC_SUBSCRIBE, MQTT_QOS);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT);
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        xEventGroupClearBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT);
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
@@ -60,10 +63,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_event_handler_cb(event_data);
 }
 
-static void connect()
+static void connect(ble2mqtt_t *ble2mqtt)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = MQTT_BROKER_URI,
+        .user_context = (void *)ble2mqtt,
     };
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
@@ -76,8 +80,7 @@ void vTaskMqtt(void *pvParameters)
     ble2mqtt_t *ble2mqtt = (ble2mqtt_t *)pvParameters;
     ESP_LOGI(TAG, "Run task mqtt");
     EventBits_t bits;
-    bool connecting = false;
-
+ble2mqtt->mqtt_connected = false;
     while (1)
     {
         //wait for wifi
@@ -87,11 +90,11 @@ void vTaskMqtt(void *pvParameters)
                                    pdFALSE,
                                    portMAX_DELAY);
 
-        if ((bits & BLE2MQTT_WIFI_CONNECTED_BIT) && !(bits & BLE2MQTT_MQTT_CONNECTED_BIT) && !connecting)
+        if ((bits & BLE2MQTT_WIFI_CONNECTED_BIT) && !(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
         {
             ESP_LOGI(TAG, "Try to connect to MQTT");
-            connect();
-            connecting = true;
+            connect(ble2mqtt);
+            vTaskDelay(5000 / portTICK_PERIOD_MS); //wait 5 sec to connect to mqtt broker
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

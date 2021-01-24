@@ -12,6 +12,8 @@
 
 static const char *TAG = "tdebug";
 
+#define BITCHECK(byte, nbit) (((byte) & (nbit)) == (nbit) ? 'Y' : 'N')
+
 void vTaskDebug(void *pvParameters)
 {
     ble2mqtt_t *ble2mqtt = (ble2mqtt_t *)pvParameters;
@@ -21,7 +23,7 @@ void vTaskDebug(void *pvParameters)
     while (1)
     {
         bits = xEventGroupGetBits(ble2mqtt->s_event_group);
-        ESP_LOGI(TAG, "Wifi: %d, Mqtt: %d", (bits & BLE2MQTT_WIFI_CONNECTED_BIT),(bits & BLE2MQTT_MQTT_CONNECTED_BIT));
+        ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT));
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
