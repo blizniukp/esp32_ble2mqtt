@@ -25,7 +25,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = esp_mqtt_client_subscribe(client, MQTT_TOPIC_SUBSCRIBE, MQTT_QOS);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        ESP_LOGD(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT);
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -63,8 +63,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_event_handler_cb(event_data);
 }
 
-static void connect(ble2mqtt_t *ble2mqtt)
+void vTaskMqtt(void *pvParameters)
 {
+    ble2mqtt_t *ble2mqtt = (ble2mqtt_t *)pvParameters;
+    ESP_LOGI(TAG, "Run task mqtt");
+    EventBits_t bits;
+    int msg_id;
+
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = MQTT_BROKER_URI,
         .user_context = (void *)ble2mqtt,
@@ -72,30 +77,27 @@ static void connect(ble2mqtt_t *ble2mqtt)
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
-    esp_mqtt_client_start(client);
-}
 
-void vTaskMqtt(void *pvParameters)
-{
-    ble2mqtt_t *ble2mqtt = (ble2mqtt_t *)pvParameters;
-    ESP_LOGI(TAG, "Run task mqtt");
-    EventBits_t bits;
-ble2mqtt->mqtt_connected = false;
     while (1)
     {
-        //wait for wifi
-        bits = xEventGroupWaitBits(ble2mqtt->s_event_group,
-                                   BLE2MQTT_WIFI_CONNECTED_BIT | BLE2MQTT_MQTT_CONNECTED_BIT,
-                                   pdFALSE,
-                                   pdFALSE,
-                                   portMAX_DELAY);
+        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_WIFI_CONNECTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for wifi
+        if (!(bits & BLE2MQTT_WIFI_CONNECTED_BIT))
+            continue;
 
-        if ((bits & BLE2MQTT_WIFI_CONNECTED_BIT) && !(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
-        {
-            ESP_LOGI(TAG, "Try to connect to MQTT");
-            connect(ble2mqtt);
-            vTaskDelay(5000 / portTICK_PERIOD_MS); //wait 5 sec to connect to mqtt broker
-        }
+        ESP_LOGI(TAG, "Try to connect to MQTT");
+        esp_mqtt_client_start(client);
+        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_CONNECTED_BIT, pdFALSE, pdFALSE, (5000 / portTICK_PERIOD_MS)); //Wait 5 sec for mqtt
+        if (!(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
+            continue;
+
+        ESP_LOGI(TAG, "Try to get dev list");
+        msg_id = esp_mqtt_client_publish(client, "/ble2mqtt/app/getDevList", "{}", 0, MQTT_QOS, 1);
+        ESP_LOGD(TAG, "Pub message, msg_id=%d", msg_id);
+        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
+        if (!(bits & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
+            continue;
+
+        ESP_LOGI(TAG, "Got device list");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 

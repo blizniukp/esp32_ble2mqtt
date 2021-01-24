@@ -6,8 +6,9 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-#define BLE2MQTT_WIFI_CONNECTED_BIT BIT0
-#define BLE2MQTT_MQTT_CONNECTED_BIT BIT1
+#define BLE2MQTT_WIFI_CONNECTED_BIT BIT0    /*!< Connected to WiFi */
+#define BLE2MQTT_MQTT_CONNECTED_BIT BIT1    /*!< Connected to MQTT Broker */
+#define BLE2MQTT_GOT_BLEDEV_LIST_BIT BIT2   /*!< Got device list from HomeAssistant */
 
 typedef struct ble2mqtt_def
 {
