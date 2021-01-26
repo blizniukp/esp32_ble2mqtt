@@ -47,6 +47,7 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
                     break;
                 }
             }
+            cJSON_Delete(root);
             xSemaphoreGive(ble2mqtt->xMutexDevices);
             xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT);
         }
