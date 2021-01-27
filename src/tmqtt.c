@@ -39,7 +39,18 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
             {
                 cJSON *dev = cJSON_GetArrayItem(root, i);
                 strncpy(ble2mqtt->devices[i]->name, cJSON_GetObjectItem(dev, "name")->valuestring, BLE2MQTT_DEV_MAX_NAME);
-                strncpy(ble2mqtt->devices[i]->mac, cJSON_GetObjectItem(dev, "mac")->valuestring, BTL2MQTT_DEV_MAC_LEN);
+                strncpy(ble2mqtt->devices[i]->address, cJSON_GetObjectItem(dev, "address")->valuestring, BTL2MQTT_DEV_ADDR_LEN);
+                if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "public", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
+                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_PUBLIC;
+                else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "random", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
+                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
+                else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "rpa-public", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
+                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RPA_PUBLIC;
+                else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "rpa-random", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
+                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RPA_RANDOM;
+                else
+                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
+
                 ble2mqtt->devices_len++;
                 if (ble2mqtt->devices_len >= BTL2MQTT_DEV_MAX_LEN)
                 {

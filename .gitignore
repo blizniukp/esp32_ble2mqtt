@@ -4,3 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 ble2mqtt_config.h
+*.backup

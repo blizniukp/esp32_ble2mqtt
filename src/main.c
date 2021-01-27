@@ -24,7 +24,7 @@ static const char *TAG = "main";
 void app_main(void)
 {
     ESP_LOGI(TAG, "Run app");
-#ifdef DEBUG
+#ifdef PRINTCHIPINFO
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",

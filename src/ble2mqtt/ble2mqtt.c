@@ -1,9 +1,11 @@
 #include <stdbool.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_gattc_api.h"
 
 #include "ble2mqtt.h"
 
@@ -30,10 +32,9 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
         ble2mqtt->devices[i] = malloc(sizeof(bledevice_t));
         if (!ble2mqtt->devices[i])
             return false;
-        ble2mqtt->devices[i]->name[0] = 0;
-        ble2mqtt->devices[i]->mac[0] = 0;
-        ble2mqtt->devices[i]->name[BLE2MQTT_DEV_MAX_NAME] = 0;
-        ble2mqtt->devices[i]->mac[BTL2MQTT_DEV_MAC_LEN] = 0;
+        bzero(&ble2mqtt->devices[i]->name, BLE2MQTT_DEV_MAX_NAME + 1);
+        bzero(&ble2mqtt->devices[i]->address, BTL2MQTT_DEV_ADDR_LEN + 1);
+        ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
     }
     return true;
 }

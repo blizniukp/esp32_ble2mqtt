@@ -32,7 +32,7 @@ void vTaskDebug(void *pvParameters)
             {
                 for (int i = 0; i < ble2mqtt->devices_len; i++)
                 {
-                    ESP_LOGI(TAG, "Dev[%i]. Name: %s, MAC: %s", i, ble2mqtt->devices[i]->name, ble2mqtt->devices[i]->mac);
+                    ESP_LOGI(TAG, "Dev[%i]. Name: %s, Addr: %s, AddrType: %d", i, ble2mqtt->devices[i]->name, ble2mqtt->devices[i]->address, ble2mqtt->devices[i]->address_type);
                 }
             }
             xSemaphoreGive(ble2mqtt->xMutexDevices);
