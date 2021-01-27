@@ -17,6 +17,8 @@ ble2mqtt_t *ble2mqtt_create(void)
 
 bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
 {
+    ESP_LOGI(TAG, "Init ble2mqtt_t");
+
     ble2mqtt->s_event_group = xEventGroupCreate();
     ble2mqtt->xMutexDevices = xSemaphoreCreateMutex();
     if (!ble2mqtt->xMutexDevices)

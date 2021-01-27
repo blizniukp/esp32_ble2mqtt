@@ -15,7 +15,7 @@
 #include "tbt.h"
 #include "tmqtt.h"
 #include "ble2mqtt/ble2mqtt.h"
-#ifdef TASKDEBUG
+#ifndef DISABLETDEBUG
 #include "tdebug.h"
 #endif
 
@@ -62,10 +62,16 @@ void app_main(void)
             ;
     }
 
+#ifndef DISABLETWIFI
     xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
+#endif
+#ifndef DISABLETMQTT
     xTaskCreate(vTaskMqtt, "task_mqtt", (2048 * 6), (void *)ble2mqtt, 10, NULL);
-    xTaskCreate(vTaskBt, "task_bt", 2048, (void *)ble2mqtt, 12, NULL);
-#ifdef TASKDEBUG
+#endif
+#ifndef DISABLETBT
+    xTaskCreate(vTaskBt, "task_bt", (2048 * 6), (void *)ble2mqtt, 12, NULL);
+#endif
+#ifndef DISABLETDEBUG
     xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);
 #endif
 }
