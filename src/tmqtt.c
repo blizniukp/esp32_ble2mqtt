@@ -60,7 +60,7 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
             }
             cJSON_Delete(root);
             xSemaphoreGive(ble2mqtt->xMutexDevices);
-            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT);
+            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT);
         }
     }
 }
@@ -144,13 +144,13 @@ void vTaskMqtt(void *pvParameters)
             if (!(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
                 continue;
         }
-        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_BT_GOT_GATT_IF_BIT))
         {
             ESP_LOGI(TAG, "Try to get dev list");
             msg_id = esp_mqtt_client_publish(client, "/ble2mqtt/app/getDevList", "{}", 0, MQTT_QOS, 1);
             ESP_LOGD(TAG, "Pub message, msg_id=%d", msg_id);
-            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
-            if (!(bits & BLE2MQTT_GOT_BLEDEV_LIST_BIT))
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
+            if (!(bits & BLE2MQTT_BT_GOT_GATT_IF_BIT))
                 continue;
             ESP_LOGI(TAG, "Got device list");
         }

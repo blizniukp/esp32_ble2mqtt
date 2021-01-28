@@ -24,7 +24,7 @@ void vTaskDebug(void *pvParameters)
     while (1)
     {
         bits = xEventGroupGetBits(ble2mqtt->s_event_group);
-        ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c, DevList: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_GOT_BLEDEV_LIST_BIT));
+        ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c, DevList: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_BT_GOT_GATT_IF_BIT));
 
         if (xSemaphoreTake(ble2mqtt->xMutexDevices, (TickType_t)10) == pdTRUE)
         {

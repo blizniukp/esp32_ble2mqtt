@@ -117,6 +117,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
         if (param->reg.status == ESP_GATT_OK)
         {
             ble2mqtt->bt.gattc_if = gattc_if;
+            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT);
         }
     }
     else
@@ -132,6 +133,7 @@ void vTaskBt(void *pvParameters)
 {
     ESP_LOGI(TAG, "Run task bluetooth");
     ble2mqtt = (ble2mqtt_t *)pvParameters;
+    EventBits_t bits;
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -194,6 +196,20 @@ void vTaskBt(void *pvParameters)
     while (1)
     {
         ESP_LOGD(TAG, "Task bt");
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
+        {
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for device list
+            if (!(bits & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
+                continue;
+        }
+
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_BT_GOT_GATT_IF_BIT))
+        {
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for gatt interface
+            if (!(bits & BLE2MQTT_BT_GOT_GATT_IF_BIT))
+                continue;
+        }
+
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 

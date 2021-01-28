@@ -44,6 +44,7 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
     ble2mqtt->devices[0]->address_type = BLE_ADDR_TYPE_PUBLIC;
     ble2mqtt->bt.gattc_if = ESP_GATT_IF_NONE;
     ble2mqtt->devices_len = 1;
+    xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT);
 #endif
     return true;
 }

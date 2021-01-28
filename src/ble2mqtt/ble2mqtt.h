@@ -7,9 +7,10 @@
 #include "freertos/event_groups.h"
 #include "esp_gattc_api.h"
 
-#define BLE2MQTT_WIFI_CONNECTED_BIT BIT0  /* Connected to WiFi */
-#define BLE2MQTT_MQTT_CONNECTED_BIT BIT1  /* Connected to MQTT Broker */
-#define BLE2MQTT_GOT_BLEDEV_LIST_BIT BIT2 /* Got device list from HomeAssistant */
+#define BLE2MQTT_WIFI_CONNECTED_BIT BIT0       /* Connected to WiFi */
+#define BLE2MQTT_MQTT_CONNECTED_BIT BIT1       /* Connected to MQTT Broker */
+#define BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT BIT2 /* Got device list from HomeAssistant */
+#define BLE2MQTT_BT_GOT_GATT_IF_BIT BIT3       /* Got gatt interface */
 
 #define BLE2MQTT_DEV_MAX_NAME (20)      /* Max btle device name */
 #define BTL2MQTT_DEV_ADDR_LEN (17)      /* Address length */
