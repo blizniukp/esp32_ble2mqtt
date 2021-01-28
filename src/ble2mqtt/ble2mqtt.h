@@ -26,6 +26,14 @@ typedef struct bledevice_def
     esp_ble_addr_type_t address_type;        /* Address type */
 } bledevice_t;
 
+/**
+ * 
+ */
+typedef struct bt_def
+{
+    uint16_t gattc_if; /* Gatt interface */
+} bt_t;
+
 typedef struct ble2mqtt_def
 {
     EventGroupHandle_t s_event_group;
@@ -33,6 +41,8 @@ typedef struct ble2mqtt_def
     SemaphoreHandle_t xMutexDevices; /* Mutex on 'devices' */
     bledevice_t *devices[BTL2MQTT_DEV_MAX_LEN];
     uint8_t devices_len; /* Number of items in 'devices' array */
+
+    bt_t bt; /* */
 } ble2mqtt_t;
 
 /**

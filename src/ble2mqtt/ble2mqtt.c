@@ -35,12 +35,14 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
         bzero(&ble2mqtt->devices[i]->name, BLE2MQTT_DEV_MAX_NAME + 1);
         bzero(&ble2mqtt->devices[i]->address, BTL2MQTT_DEV_ADDR_LEN + 1);
         ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
+        ble2mqtt->bt.gattc_if = ESP_GATT_IF_NONE;
     }
 
 #ifdef ENABLEBTDEVTEST
     strcpy(ble2mqtt->devices[0]->name, "Nordic_Blinky");
     strcpy(ble2mqtt->devices[0]->address, "F1:34:D5:DF:B8:3B");
     ble2mqtt->devices[0]->address_type = BLE_ADDR_TYPE_PUBLIC;
+    ble2mqtt->bt.gattc_if = ESP_GATT_IF_NONE;
     ble2mqtt->devices_len = 1;
 #endif
     return true;
