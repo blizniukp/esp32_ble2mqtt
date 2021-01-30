@@ -22,7 +22,8 @@
 
 static const char *TAG = "tbt";
 static ble2mqtt_t *ble2mqtt = NULL;
-static const uint32_t scan_duration = 120;
+static const uint32_t scan_duration = 60 * 30; //30 min
+static bool is_scanning = false;
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
@@ -35,6 +36,26 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_interval = 0x400,
     .scan_window = 0x30,
     .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
+
+static void bt_scan_start()
+{
+    if (is_scanning)
+        return;
+
+    ESP_LOGD(TAG, "Start scanning");
+    esp_ble_gap_start_scanning(scan_duration);
+    is_scanning = true;
+}
+
+static void bt_scan_stop()
+{
+    if (!is_scanning)
+        return;
+
+    ESP_LOGD(TAG, "Stop scanning");
+    esp_ble_gap_stop_scanning();
+    is_scanning = false;
+}
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
@@ -56,7 +77,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
     {
         ESP_LOGD(TAG, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
-        esp_ble_gap_start_scanning(scan_duration);
+        bt_scan_start();
     }
     break;
 
@@ -90,7 +111,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             if (dev->is_connecting)
                 break;
 
-            esp_ble_gap_stop_scanning();
+            bt_scan_stop();
 
             ESP_LOGI(TAG, "Try to open connection to: %s. Address type: %d", dev->address_str, dev->address_type);
             esp_err_t ret = esp_ble_gattc_open(dev->gattc_if, dev->address, dev->address_type, true);
@@ -119,6 +140,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             break;
         }
         ESP_LOGI(TAG, "Stop scan successfully");
+        is_scanning = false;
     }
     break;
 
@@ -187,13 +209,22 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 
     case ESP_GATTC_CONNECT_EVT: //40
         ESP_LOGD(TAG, "CONNECT_EVT");
+        dev = bt_get_dev_by_address(param->connect.remote_bda);
+        if (dev)
+        {
+            dev->is_connecting = false;
+            dev->is_connected = true;
+        }
         break;
 
     case ESP_GATTC_DISCONNECT_EVT: //41
         ESP_LOGD(TAG, "DISCONNECT_EVT");
         dev = bt_get_dev_by_address(param->disconnect.remote_bda);
         if (dev)
+        {
+            dev->is_connecting = false;
             dev->is_connected = false;
+        }
 
         switch (param->disconnect.reason)
         {
@@ -225,6 +256,8 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
             ESP_LOGD(TAG, "ESP_GATT_CONN_NONE");
             break;
         }
+
+        bt_scan_start();
         break;
 
     case ESP_GATTC_DIS_SRVC_CMPL_EVT: //46
@@ -325,7 +358,19 @@ void vTaskBt(void *pvParameters)
             }
         }
 
-        vTaskDelay(60000 / portTICK_PERIOD_MS);
+        if (!is_scanning)
+        {
+            for (int i = 0; i < ble2mqtt->devices_len; i++)
+            {
+                if (!ble2mqtt->devices[i]->is_connected || !ble2mqtt->devices[i]->is_connecting)
+                {
+                    bt_scan_start();
+                    break;
+                }
+            }
+        }
+
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
