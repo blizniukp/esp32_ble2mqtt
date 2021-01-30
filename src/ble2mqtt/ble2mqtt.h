@@ -10,30 +10,29 @@
 #define BLE2MQTT_WIFI_CONNECTED_BIT BIT0       /* Connected to WiFi */
 #define BLE2MQTT_MQTT_CONNECTED_BIT BIT1       /* Connected to MQTT Broker */
 #define BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT BIT2 /* Got device list from HomeAssistant */
-#define BLE2MQTT_BT_GOT_GATT_IF_BIT BIT3       /* Got gatt interface */
 
 #define BLE2MQTT_DEV_MAX_NAME (20)      /* Max btle device name */
 #define BTL2MQTT_DEV_ADDR_LEN (17)      /* Address length */
 #define BTL2MQTT_DEV_ADDR_TYPE_LEN (10) /* Address type length */
-#define BTL2MQTT_DEV_MAX_LEN (6)        /* Max supported devices */
+#define BTL2MQTT_DEV_MAX_LEN (4)        /* Max supported devices */
 
 /**
  * Information about BTLE device
  */
 typedef struct bledevice_def
 {
-    char name[BLE2MQTT_DEV_MAX_NAME + 1];    /* Device name */
-    char address[BTL2MQTT_DEV_ADDR_LEN + 1]; /* Device address */
-    esp_ble_addr_type_t address_type;        /* Address type */
-} bledevice_t;
+    int appid;
 
-/**
- * 
- */
-typedef struct bt_def
-{
+    char name[BLE2MQTT_DEV_MAX_NAME + 1];        /* Device name */
+    char address_str[BTL2MQTT_DEV_ADDR_LEN + 1]; /* Device address (as string) */
+    esp_bd_addr_t address;                       /* Device address */
+    esp_ble_addr_type_t address_type;            /* Address type */
+
+    bool is_connecting; /* If True, esp trying to connect to device */
+    bool is_connected;  /* If True, we are connected to bt device */
+
     uint16_t gattc_if; /* Gatt interface */
-} bt_t;
+} bledevice_t;
 
 typedef struct ble2mqtt_def
 {
@@ -42,8 +41,6 @@ typedef struct ble2mqtt_def
     SemaphoreHandle_t xMutexDevices; /* Mutex on 'devices' */
     bledevice_t *devices[BTL2MQTT_DEV_MAX_LEN];
     uint8_t devices_len; /* Number of items in 'devices' array */
-
-    bt_t bt; /* */
 } ble2mqtt_t;
 
 /**
@@ -57,4 +54,10 @@ ble2mqtt_t *ble2mqtt_create(void);
  */
 bool ble2mqtt_init(ble2mqtt_t *ble2mqtt);
 
+/**
+ * Convert BT address from string to esp_bd_addr_t
+ * @param device [in] - pointer to bt device
+ * @return True on success
+ */
+bool bt_parse_address(bledevice_t *device);
 #endif

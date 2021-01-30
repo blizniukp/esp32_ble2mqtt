@@ -24,7 +24,7 @@ void vTaskDebug(void *pvParameters)
     while (1)
     {
         bits = xEventGroupGetBits(ble2mqtt->s_event_group);
-        ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c, DevList: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_BT_GOT_GATT_IF_BIT));
+        ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT));
 
         if (xSemaphoreTake(ble2mqtt->xMutexDevices, (TickType_t)10) == pdTRUE)
         {
@@ -32,8 +32,8 @@ void vTaskDebug(void *pvParameters)
             {
                 for (int i = 0; i < ble2mqtt->devices_len; i++)
                 {
-                    ESP_LOGI(TAG, "Dev[%i]. Name: %s, Addr: %s, AddrType: %d, If: %u",
-                             i, ble2mqtt->devices[i]->name, ble2mqtt->devices[i]->address, ble2mqtt->devices[i]->address_type, ble2mqtt->bt.gattc_if);
+                    ESP_LOGI(TAG, "Dev[%i]. Connected: %s, Name: %s, Addr: %s, AddrType: %d, If: %u",
+                             i, (ble2mqtt->devices[i]->is_connected == true ? "Y" : "N"), ble2mqtt->devices[i]->name, ble2mqtt->devices[i]->address_str, ble2mqtt->devices[i]->address_type, ble2mqtt->devices[i]->gattc_if);
                 }
             }
             xSemaphoreGive(ble2mqtt->xMutexDevices);

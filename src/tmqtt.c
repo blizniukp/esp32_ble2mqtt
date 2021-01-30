@@ -35,22 +35,28 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
             cJSON *root = cJSON_Parse(event->data);
             int dev_arr_len = cJSON_GetArraySize(root);
             ESP_LOGD(TAG, "dev_arr_len: %d\n", dev_arr_len);
-            for (int i = 0; i < dev_arr_len; i++)
+            int p = 0;
+            for (int i = 0; i < dev_arr_len; i++, p++)
             {
                 cJSON *dev = cJSON_GetArrayItem(root, i);
-                strncpy(ble2mqtt->devices[i]->name, cJSON_GetObjectItem(dev, "name")->valuestring, BLE2MQTT_DEV_MAX_NAME);
-                strncpy(ble2mqtt->devices[i]->address, cJSON_GetObjectItem(dev, "address")->valuestring, BTL2MQTT_DEV_ADDR_LEN);
+                strncpy(ble2mqtt->devices[p]->name, cJSON_GetObjectItem(dev, "name")->valuestring, BLE2MQTT_DEV_MAX_NAME);
+                strncpy(ble2mqtt->devices[p]->address_str, cJSON_GetObjectItem(dev, "address")->valuestring, BTL2MQTT_DEV_ADDR_LEN);
                 if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "public", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
-                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_PUBLIC;
+                    ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_PUBLIC;
                 else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "random", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
-                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
+                    ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RANDOM;
                 else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "rpa-public", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
-                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RPA_PUBLIC;
+                    ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RPA_PUBLIC;
                 else if (strncasecmp(cJSON_GetObjectItem(dev, "address")->valuestring, "rpa-random", BTL2MQTT_DEV_ADDR_TYPE_LEN) == 0)
-                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RPA_RANDOM;
+                    ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RPA_RANDOM;
                 else
-                    ble2mqtt->devices[i]->address_type = BLE_ADDR_TYPE_RANDOM;
-
+                    ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RANDOM;
+                if (!bt_parse_address(ble2mqtt->devices[p]))
+                {
+                    ESP_LOGE(TAG, "Incorrect bt address %s", ble2mqtt->devices[p]->address_str);
+                    p--;
+                    continue;
+                }
                 ble2mqtt->devices_len++;
                 if (ble2mqtt->devices_len >= BTL2MQTT_DEV_MAX_LEN)
                 {
@@ -60,7 +66,7 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
             }
             cJSON_Delete(root);
             xSemaphoreGive(ble2mqtt->xMutexDevices);
-            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT);
+            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT);
         }
     }
 }
@@ -144,13 +150,13 @@ void vTaskMqtt(void *pvParameters)
             if (!(bits & BLE2MQTT_MQTT_CONNECTED_BIT))
                 continue;
         }
-        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_BT_GOT_GATT_IF_BIT))
+        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
         {
             ESP_LOGI(TAG, "Try to get dev list");
             msg_id = esp_mqtt_client_publish(client, "/ble2mqtt/app/getDevList", "{}", 0, MQTT_QOS, 1);
             ESP_LOGD(TAG, "Pub message, msg_id=%d", msg_id);
-            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
-            if (!(bits & BLE2MQTT_BT_GOT_GATT_IF_BIT))
+            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, (15000 / portTICK_PERIOD_MS)); //Wait 15 sec for btle device list
+            if (!(bits & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
                 continue;
             ESP_LOGI(TAG, "Got device list");
         }

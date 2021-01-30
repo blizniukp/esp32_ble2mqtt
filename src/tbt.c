@@ -20,22 +20,29 @@
 #include "ble2mqtt/ble2mqtt.h"
 #include "tbt.h"
 
-#define APP_ID_0 0
-
 static const char *TAG = "tbt";
 static ble2mqtt_t *ble2mqtt = NULL;
+static const uint32_t scan_duration = 120;
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
+static bledevice_t *bt_get_dev_by_address(esp_bd_addr_t address);
+
+static esp_ble_scan_params_t ble_scan_params = {
+    .scan_type = BLE_SCAN_TYPE_ACTIVE,
+    .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
+    .scan_interval = 0x400,
+    .scan_window = 0x30,
+    .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    uint8_t *adv_name = NULL;
-    uint8_t adv_name_len = 0;
-    ESP_LOGI(TAG, "Got new BT event: %d", event);
     switch (event)
     {
     case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+    {
+        ESP_LOGD(TAG, "ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT");
         ESP_LOGI(TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
                  param->update_conn_params.status,
                  param->update_conn_params.min_int,
@@ -43,16 +50,20 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                  param->update_conn_params.conn_int,
                  param->update_conn_params.latency,
                  param->update_conn_params.timeout);
-        break;
+    }
+    break;
+
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
     {
-        //the unit of the duration is second
-        uint32_t duration = 30;
-        esp_ble_gap_start_scanning(duration);
-        break;
+        ESP_LOGD(TAG, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT");
+        esp_ble_gap_start_scanning(scan_duration);
     }
+    break;
+
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
-        //scan start complete event to indicate scan start successfully or failed
+    {
+        ESP_LOGD(TAG, "ESP_GAP_BLE_SCAN_START_COMPLETE_EVT");
+
         if (param->scan_start_cmpl.status == ESP_BT_STATUS_SUCCESS)
         {
             ESP_LOGI(TAG, "Scan start success");
@@ -61,71 +72,168 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         {
             ESP_LOGE(TAG, "Scan start failed");
         }
-        break;
+    }
+    break;
+
     case ESP_GAP_BLE_SCAN_RESULT_EVT:
     {
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt)
         {
         case ESP_GAP_SEARCH_INQ_RES_EVT:
-            esp_log_buffer_hex(TAG, scan_result->scan_rst.bda, 6);
-            ESP_LOGI(TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
-            adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv,
-                                                ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
-            ESP_LOGI(TAG, "Searched Device Name Len %d", adv_name_len);
-            esp_log_buffer_char(TAG, adv_name, adv_name_len);
-            ESP_LOGI(TAG, "\n");
-            break;
+        {
+            bledevice_t *dev = bt_get_dev_by_address(scan_result->scan_rst.bda);
+            if (!dev)
+                break;
+            if (dev->is_connected)
+                break;
+            if (dev->is_connecting)
+                break;
+
+            esp_ble_gap_stop_scanning();
+
+            ESP_LOGI(TAG, "Try to open connection to: %s. Address type: %d", dev->address_str, dev->address_type);
+            esp_err_t ret = esp_ble_gattc_open(dev->gattc_if, dev->address, dev->address_type, true);
+            if (ret)
+            {
+                ESP_LOGE(TAG, "open connection to %s failed, error code = %x", dev->address_str, ret);
+            }
+            dev->is_connecting = true;
+        }
+        break;
         case ESP_GAP_SEARCH_INQ_CMPL_EVT:
             break;
         default:
             break;
         }
-        break;
     }
+    break;
 
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
+    {
+        ESP_LOGD(TAG, "ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT");
+
         if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS)
         {
             ESP_LOGE(TAG, "Scan stop failed");
             break;
         }
         ESP_LOGI(TAG, "Stop scan successfully");
-
-        break;
+    }
+    break;
 
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
+    {
+        ESP_LOGD(TAG, "ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT");
+
         if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS)
         {
             ESP_LOGE(TAG, "Adv stop failed");
             break;
         }
         ESP_LOGI(TAG, "Stop adv successfully");
-        break;
+    }
+    break;
 
     default:
+        ESP_LOGD(TAG, "Got event: %d", event);
         break;
     }
+}
+
+/**
+ * Search bt device by address
+ * @return pointer to bledevice_t, or NULL if device not found
+ */
+static bledevice_t *bt_get_dev_by_address(esp_bd_addr_t address)
+{
+    for (int i = 0; i < ble2mqtt->devices_len; i++)
+        if (memcmp(address, ble2mqtt->devices[i]->address, ESP_BD_ADDR_LEN) == 0)
+            return ble2mqtt->devices[i];
+
+    return NULL;
 }
 
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     ESP_LOGI(TAG, "EVT %d, gattc if %d", event, gattc_if);
+    bledevice_t *dev = NULL;
 
-    if (event == ESP_GATTC_REG_EVT)
+    switch (event)
     {
+    case ESP_GATTC_REG_EVT: //0
+        ESP_LOGD(TAG, "REG_EVT");
         if (param->reg.status == ESP_GATT_OK)
         {
-            ble2mqtt->bt.gattc_if = gattc_if;
-            xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT);
+            ble2mqtt->devices[param->reg.app_id]->gattc_if = gattc_if;
         }
-    }
-    else
-    {
-        ESP_LOGI(TAG, "Reg app failed, app_id %04x, status %d",
-                 param->reg.app_id,
-                 param->reg.status);
-        return;
+        else
+        {
+            ESP_LOGI(TAG, "Reg app failed, app_id %04x, status %d",
+                     param->reg.app_id,
+                     param->reg.status);
+            return;
+        }
+
+        break;
+
+    case ESP_GATTC_OPEN_EVT: //2
+        ESP_LOGD(TAG, "OPEN_EVT");
+        if (param->open.status != ESP_GATT_OK)
+        {
+            ESP_LOGE(TAG, "open failed, status %d", param->open.status);
+        }
+        break;
+
+    case ESP_GATTC_CONNECT_EVT: //40
+        ESP_LOGD(TAG, "CONNECT_EVT");
+        break;
+
+    case ESP_GATTC_DISCONNECT_EVT: //41
+        ESP_LOGD(TAG, "DISCONNECT_EVT");
+        dev = bt_get_dev_by_address(param->disconnect.remote_bda);
+        if (dev)
+            dev->is_connected = false;
+
+        switch (param->disconnect.reason)
+        {
+        case ESP_GATT_CONN_UNKNOWN:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_UNKNOWN");
+            break;
+        case ESP_GATT_CONN_L2C_FAILURE:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_L2C_FAILURE");
+            break;
+        case ESP_GATT_CONN_TIMEOUT:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_TIMEOUT");
+            break;
+        case ESP_GATT_CONN_TERMINATE_PEER_USER:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_TERMINATE_PEER_USER");
+            break;
+        case ESP_GATT_CONN_TERMINATE_LOCAL_HOST:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_TERMINATE_LOCAL_HOST");
+            break;
+        case ESP_GATT_CONN_FAIL_ESTABLISH:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_FAIL_ESTABLISH");
+            break;
+        case ESP_GATT_CONN_LMP_TIMEOUT:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_LMP_TIMEOUT");
+            break;
+        case ESP_GATT_CONN_CONN_CANCEL:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_CONN_CANCEL");
+            break;
+        case ESP_GATT_CONN_NONE:
+            ESP_LOGD(TAG, "ESP_GATT_CONN_NONE");
+            break;
+        }
+        break;
+
+    case ESP_GATTC_DIS_SRVC_CMPL_EVT: //46
+        ESP_LOGD(TAG, "DIS_SRVC_CMPL_EVT");
+        break;
+
+    default:
+        ESP_LOGD(TAG, "Unsupported event: %d", event);
+        break;
     }
 }
 
@@ -180,11 +288,14 @@ void vTaskBt(void *pvParameters)
         return;
     }
 
-    ret = esp_ble_gattc_app_register(APP_ID_0);
-    if (ret)
+    for (int i = 0; i < BTL2MQTT_DEV_MAX_LEN; i++)
     {
-        ESP_LOGE(TAG, "gattc app register error, error code = %x", ret);
-        return;
+        ret = esp_ble_gattc_app_register(i);
+        if (ret)
+        {
+            ESP_LOGE(TAG, "gattc app register error, error code = %x", ret);
+            return;
+        }
     }
 
     ret = esp_ble_gatt_set_local_mtu(200);
@@ -195,22 +306,26 @@ void vTaskBt(void *pvParameters)
 
     while (1)
     {
+#ifndef DISABLETASKMSG
         ESP_LOGD(TAG, "Task bt");
+#endif
+
         if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
         {
+            ESP_LOGD(TAG, "Wait for device list");
             bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for device list
             if (!(bits & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
                 continue;
+            ESP_LOGD(TAG, "Got device list. Set scan params and start scan.");
+
+            ret = esp_ble_gap_set_scan_params(&ble_scan_params);
+            if (ret)
+            {
+                ESP_LOGE(TAG, "set scan params error, error code = %x", ret);
+            }
         }
 
-        if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_BT_GOT_GATT_IF_BIT))
-        {
-            bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_BT_GOT_GATT_IF_BIT, pdFALSE, pdFALSE, portMAX_DELAY); //Wait for gatt interface
-            if (!(bits & BLE2MQTT_BT_GOT_GATT_IF_BIT))
-                continue;
-        }
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);

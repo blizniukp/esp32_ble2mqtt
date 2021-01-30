@@ -92,8 +92,9 @@ void vTaskWifi(void *pvParameters)
 
     while (1)
     {
-        //TODO: dodać obsługę WiFi
+#ifndef DISABLETASKMSG
         ESP_LOGD(TAG, "Task wifi");
+#endif
         vTaskDelay(1500 / portTICK_PERIOD_MS);
     }
 
