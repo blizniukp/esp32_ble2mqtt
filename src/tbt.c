@@ -22,7 +22,7 @@
 
 static const char *TAG = "tbt";
 static ble2mqtt_t *ble2mqtt = NULL;
-static const uint32_t scan_duration = 60 * 30; //30 min
+static const uint32_t scan_duration = UINT32_MAX;
 static bool is_scanning = false;
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -205,16 +205,20 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
         {
             ESP_LOGE(TAG, "open failed, status %d", param->open.status);
         }
+        else
+        {
+            dev = bt_get_dev_by_address(param->connect.remote_bda);
+            if (dev)
+            {
+                dev->is_connecting = false;
+                dev->is_connected = true;
+            }
+        }
+
         break;
 
     case ESP_GATTC_CONNECT_EVT: //40
         ESP_LOGD(TAG, "CONNECT_EVT");
-        dev = bt_get_dev_by_address(param->connect.remote_bda);
-        if (dev)
-        {
-            dev->is_connecting = false;
-            dev->is_connected = true;
-        }
         break;
 
     case ESP_GATTC_DISCONNECT_EVT: //41
@@ -339,9 +343,9 @@ void vTaskBt(void *pvParameters)
 
     while (1)
     {
-#ifndef DISABLETASKMSG
-        ESP_LOGD(TAG, "Task bt");
-#endif
+        //#ifndef DISABLETASKMSG
+        ESP_LOGD(TAG, "Task bt. is_scanning: %s", (is_scanning == true ? "Y" : "N"));
+        //#endif
 
         if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
         {

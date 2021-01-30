@@ -38,7 +38,7 @@ void vTaskDebug(void *pvParameters)
             }
             xSemaphoreGive(ble2mqtt->xMutexDevices);
         }
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
