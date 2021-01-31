@@ -28,6 +28,9 @@ typedef struct bledevice_def
     esp_bd_addr_t address;                       /* Device address */
     esp_ble_addr_type_t address_type;            /* Address type */
 
+    esp_bt_uuid_t service_uuid; /* Serivce UUID */
+    esp_bt_uuid_t char_uuid;    /* Characteristic UUID */
+
     bool is_connecting; /* If True, esp trying to connect to device */
     bool is_connected;  /* If True, we are connected to bt device */
 

@@ -37,6 +37,13 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_window = 0x30,
     .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE};
 
+static esp_bt_uuid_t notify_descr_uuid = {
+    .len = ESP_UUID_LEN_16,
+    .uuid = {
+        .uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG,
+    },
+};
+
 static void bt_scan_start()
 {
     if (is_scanning)
@@ -212,6 +219,8 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
             {
                 dev->is_connecting = false;
                 dev->is_connected = true;
+
+                esp_ble_gattc_search_service(gattc_if, param->connect.conn_id, &dev->service_uuid);
             }
         }
 
@@ -266,6 +275,13 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 
     case ESP_GATTC_DIS_SRVC_CMPL_EVT: //46
         ESP_LOGD(TAG, "DIS_SRVC_CMPL_EVT");
+        if (param->dis_srvc_cmpl.status != ESP_GATT_OK)
+        {
+            ESP_LOGE(TAG, "discover service failed, status %d", param->dis_srvc_cmpl.status);
+            break;
+        }
+        ESP_LOGI(TAG, "discover service complete conn_id %d", param->dis_srvc_cmpl.conn_id);
+        //esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
         break;
 
     default:

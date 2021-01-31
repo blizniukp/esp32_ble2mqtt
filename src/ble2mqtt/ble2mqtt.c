@@ -43,6 +43,8 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
         ble2mqtt->devices[i]->gattc_if = ESP_GATT_IF_NONE;
         ble2mqtt->devices[i]->is_connected = false;
         ble2mqtt->devices[i]->is_connecting = false;
+
+        ble2mqtt->devices[i]->service_uuid.len = 0;
     }
 
 #ifdef ENABLEBTDEVTEST
@@ -55,6 +57,8 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
     ble2mqtt->devices[0]->is_connecting = false;
     ble2mqtt->devices[0]->gattc_if = ESP_GATT_IF_NONE;
     ble2mqtt->devices_len = 1;
+
+    ble2mqtt->devices[0]->service_uuid.len = 0;
     xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT);
 #endif
     return true;

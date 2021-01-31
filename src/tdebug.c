@@ -32,8 +32,27 @@ void vTaskDebug(void *pvParameters)
             {
                 for (int i = 0; i < ble2mqtt->devices_len; i++)
                 {
+                    bledevice_t *dev = ble2mqtt->devices[i];
                     ESP_LOGI(TAG, "Dev[%i]. Connected: %s, Name: %s, Addr: %s, AddrType: %d, If: %u",
-                             i, (ble2mqtt->devices[i]->is_connected == true ? "Y" : "N"), ble2mqtt->devices[i]->name, ble2mqtt->devices[i]->address_str, ble2mqtt->devices[i]->address_type, ble2mqtt->devices[i]->gattc_if);
+                             i, (dev->is_connected == true ? "Y" : "N"), dev->name, dev->address_str, dev->address_type, dev->gattc_if);
+                    if (dev->service_uuid.len != 0)
+                    {
+                        switch (dev->service_uuid.len)
+                        {
+                        case ESP_UUID_LEN_16:
+                            ESP_LOGI(TAG, "16B: ");
+                            break;
+                        case ESP_UUID_LEN_32:
+                            ESP_LOGI(TAG, "32B: ");
+                            break;
+                        case ESP_UUID_LEN_128:
+                            ESP_LOGI(TAG, "128B: ");
+                            break;
+                        default:
+                            ESP_LOGE(TAG, "Unknown service UUID");
+                            break;
+                        }
+                    }
                 }
             }
             xSemaphoreGive(ble2mqtt->xMutexDevices);

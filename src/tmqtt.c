@@ -12,6 +12,7 @@
 
 #include "tmqtt.h"
 #include "ble2mqtt/ble2mqtt.h"
+#include "ble2mqtt/ble2mqtt_utils.h"
 #include "ble2mqtt_config.h"
 
 static const char *TAG = "tmqtt";
@@ -54,6 +55,12 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
                 if (!bt_parse_address(ble2mqtt->devices[p]))
                 {
                     ESP_LOGE(TAG, "Incorrect bt address %s", ble2mqtt->devices[p]->address_str);
+                    p--;
+                    continue;
+                }
+                if(!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "service_uuid")->valuestring, &ble2mqtt->devices[p]->service_uuid))
+                {
+                    ESP_LOGE(TAG, "Service uuid is incorrect %s", cJSON_GetObjectItem(dev, "service_uuid")->valuestring);
                     p--;
                     continue;
                 }
