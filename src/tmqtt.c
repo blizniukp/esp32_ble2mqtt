@@ -52,7 +52,7 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
                     ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RPA_RANDOM;
                 else
                     ble2mqtt->devices[p]->address_type = BLE_ADDR_TYPE_RANDOM;
-                if (!bt_parse_address(ble2mqtt->devices[p]))
+                if (!ble2mqtt_utils_parse_address(ble2mqtt->devices[p]->address_str, &ble2mqtt->devices[p]->address))
                 {
                     ESP_LOGE(TAG, "Incorrect bt address %s", ble2mqtt->devices[p]->address_str);
                     p--;

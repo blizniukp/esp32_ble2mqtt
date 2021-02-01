@@ -63,20 +63,3 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
 #endif
     return true;
 }
-
-bool bt_parse_address(bledevice_t *device)
-{
-    if (strlen(device->address_str) != 17)
-        return false;
-
-    int data[6];
-    sscanf(device->address_str, "%x:%x:%x:%x:%x:%x", &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]);
-    device->address[0] = (uint8_t)data[0];
-    device->address[1] = (uint8_t)data[1];
-    device->address[2] = (uint8_t)data[2];
-    device->address[3] = (uint8_t)data[3];
-    device->address[4] = (uint8_t)data[4];
-    device->address[5] = (uint8_t)data[5];
-
-    return true;
-}

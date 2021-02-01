@@ -4,6 +4,23 @@
 
 #include "ble2mqtt_utils.h"
 
+bool ble2mqtt_utils_parse_address(char *address_str, uint8_t *address)
+{
+    if (strlen(address_str) != 17)
+        return false;
+
+    int data[6];
+    sscanf(address_str, "%x:%x:%x:%x:%x:%x", &data[0], &data[1], &data[2], &data[3], &data[4], &data[5]);
+    address[0] = (uint8_t)data[0];
+    address[1] = (uint8_t)data[1];
+    address[2] = (uint8_t)data[2];
+    address[3] = (uint8_t)data[3];
+    address[4] = (uint8_t)data[4];
+    address[5] = (uint8_t)data[5];
+
+    return true;
+}
+
 bool ble2mqtt_utils_parse_uuid(char *value, esp_bt_uuid_t *m_uuid)
 {
     if (!m_uuid)
@@ -86,3 +103,4 @@ bool ble2mqtt_utils_parse_uuid(char *value, esp_bt_uuid_t *m_uuid)
     }
     return false;
 }
+

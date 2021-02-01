@@ -57,10 +57,4 @@ ble2mqtt_t *ble2mqtt_create(void);
  */
 bool ble2mqtt_init(ble2mqtt_t *ble2mqtt);
 
-/**
- * Convert BT address from string to esp_bd_addr_t
- * @param device [in] - pointer to bt device
- * @return True on success
- */
-bool bt_parse_address(bledevice_t *device);
 #endif
