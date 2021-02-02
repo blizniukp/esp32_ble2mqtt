@@ -64,6 +64,12 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
                     p--;
                     continue;
                 }
+                if(!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "char_uuid")->valuestring, &ble2mqtt->devices[p]->char_uuid))
+                {
+                    ESP_LOGE(TAG, "Characteristic uuid is incorrect %s", cJSON_GetObjectItem(dev, "char_uuid")->valuestring);
+                    p--;
+                    continue;
+                }
                 ble2mqtt->devices_len++;
                 if (ble2mqtt->devices_len >= BTL2MQTT_DEV_MAX_LEN)
                 {

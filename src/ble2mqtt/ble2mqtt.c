@@ -35,7 +35,7 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
         if (!ble2mqtt->devices[i])
             return false;
 
-        ble2mqtt->devices[i]->appid = i;
+        ble2mqtt->devices[i]->appid = (uint8_t)i;
         bzero(&ble2mqtt->devices[i]->name, BLE2MQTT_DEV_MAX_NAME + 1);
         bzero(&ble2mqtt->devices[i]->address_str, BTL2MQTT_DEV_ADDR_LEN + 1);
         bzero(&ble2mqtt->devices[i]->address, ESP_BD_ADDR_LEN);
@@ -43,8 +43,12 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
         ble2mqtt->devices[i]->gattc_if = ESP_GATT_IF_NONE;
         ble2mqtt->devices[i]->is_connected = false;
         ble2mqtt->devices[i]->is_connecting = false;
-
+        ble2mqtt->devices[i]->conn_id = 0xFFFF;
         ble2mqtt->devices[i]->service_uuid.len = 0;
+        ble2mqtt->devices[i]->service_start_handle = 0;
+        ble2mqtt->devices[i]->service_end_handle = 0;
+        ble2mqtt->devices[i]->char_elem_result = NULL;
+        ble2mqtt->devices[i]->descr_elem_result = NULL;
     }
 
 #ifdef ENABLEBTDEVTEST
@@ -56,7 +60,12 @@ bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
     ble2mqtt->devices[0]->is_connected = false;
     ble2mqtt->devices[0]->is_connecting = false;
     ble2mqtt->devices[0]->gattc_if = ESP_GATT_IF_NONE;
+    ble2mqtt->devices[0]->conn_id = 0xFFFF;
     ble2mqtt->devices_len = 1;
+    ble2mqtt->devices[0]->service_start_handle = 0;
+    ble2mqtt->devices[0]->service_end_handle = 0;
+    ble2mqtt->devices[0]->char_elem_result = NULL;
+    ble2mqtt->devices[0]->descr_elem_result = NULL;
 
     ble2mqtt->devices[0]->service_uuid.len = 0;
     xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT);

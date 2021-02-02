@@ -21,7 +21,7 @@
  */
 typedef struct bledevice_def
 {
-    int appid;
+    uint8_t appid;
 
     char name[BLE2MQTT_DEV_MAX_NAME + 1];        /* Device name */
     char address_str[BTL2MQTT_DEV_ADDR_LEN + 1]; /* Device address (as string) */
@@ -35,6 +35,13 @@ typedef struct bledevice_def
     bool is_connected;  /* If True, we are connected to bt device */
 
     uint16_t gattc_if; /* Gatt interface */
+    uint16_t conn_id;  /* Connection id*/
+
+    uint16_t service_start_handle;            /* */
+    uint16_t service_end_handle;              /* */
+    esp_gattc_char_elem_t *char_elem_result;  /* */
+    esp_gattc_descr_elem_t *descr_elem_result; /* */
+    uint16_t char_handle;                     /* */
 } bledevice_t;
 
 typedef struct ble2mqtt_def

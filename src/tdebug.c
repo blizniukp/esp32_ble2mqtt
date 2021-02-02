@@ -40,14 +40,17 @@ void vTaskDebug(void *pvParameters)
                         switch (dev->service_uuid.len)
                         {
                         case ESP_UUID_LEN_16:
-                            ESP_LOGI(TAG, "16B: ");
+                            ESP_LOGI(TAG, "16B: %2X", dev->service_uuid.uuid.uuid16);
                             break;
                         case ESP_UUID_LEN_32:
-                            ESP_LOGI(TAG, "32B: ");
+                            ESP_LOGI(TAG, "32B: %4X", dev->service_uuid.uuid.uuid32);
                             break;
                         case ESP_UUID_LEN_128:
+                        {
                             ESP_LOGI(TAG, "128B: ");
-                            break;
+                            esp_log_buffer_hex(TAG, dev->service_uuid.uuid.uuid128, ESP_UUID_LEN_128);
+                        }
+                        break;
                         default:
                             ESP_LOGE(TAG, "Unknown service UUID");
                             break;
