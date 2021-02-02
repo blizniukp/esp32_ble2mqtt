@@ -361,6 +361,12 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     case ESP_GATTC_NOTIFY_EVT: //10
     {
         ESP_LOGD(TAG, "NOTIFY_EVT");
+
+        if (p_data->notify.is_notify)
+            ESP_LOGI(TAG, "Got notify");
+        else
+            ESP_LOGI(TAG, "Got indicate");
+        esp_log_buffer_hex(TAG, p_data->notify.value, p_data->notify.value_len);
     }
     break;
 
