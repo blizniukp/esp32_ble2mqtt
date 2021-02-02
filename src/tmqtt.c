@@ -16,6 +16,8 @@
 #include "ble2mqtt_config.h"
 
 static const char *TAG = "tmqtt";
+#define VAL_MAX (40)
+#define MSG_MAX (200)
 
 /**
  * Parse new message and add to queue
@@ -58,13 +60,13 @@ static void mqtt_new_message(ble2mqtt_t *ble2mqtt, esp_mqtt_event_handle_t event
                     p--;
                     continue;
                 }
-                if(!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "service_uuid")->valuestring, &ble2mqtt->devices[p]->service_uuid))
+                if (!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "service_uuid")->valuestring, &ble2mqtt->devices[p]->service_uuid))
                 {
                     ESP_LOGE(TAG, "Service uuid is incorrect %s", cJSON_GetObjectItem(dev, "service_uuid")->valuestring);
                     p--;
                     continue;
                 }
-                if(!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "char_uuid")->valuestring, &ble2mqtt->devices[p]->char_uuid))
+                if (!ble2mqtt_utils_parse_uuid(cJSON_GetObjectItem(dev, "char_uuid")->valuestring, &ble2mqtt->devices[p]->char_uuid))
                 {
                     ESP_LOGE(TAG, "Characteristic uuid is incorrect %s", cJSON_GetObjectItem(dev, "char_uuid")->valuestring);
                     p--;
@@ -173,6 +175,47 @@ void vTaskMqtt(void *pvParameters)
                 continue;
             ESP_LOGI(TAG, "Got device list");
         }
+
+        ESP_LOGI(TAG, "Wait for new data in queue");
+        bits = xEventGroupWaitBits(ble2mqtt->s_event_group, BLE2MQTT_NEW_BTLE_MESSAGE, pdTRUE, pdFALSE, (5000 / portTICK_PERIOD_MS)); //Wait 5 sec for bt data
+        if (!(bits & BLE2MQTT_NEW_BTLE_MESSAGE))
+            continue;
+
+        ESP_LOGD(TAG, "New data in queue");
+        btle_q_element_t *elem = NULL;
+        if (xQueueReceive(ble2mqtt->xQueue,
+                          &elem,
+                          (TickType_t)0) == pdPASS)
+        {
+            ESP_LOGD(TAG, "elem: is_notify: %d, value[0] : %u", elem->is_notify, elem->value[0]);
+
+            char msg[MSG_MAX] = {0};
+            char val[VAL_MAX] = {0};
+            if (!ble2mqtt_utils_u8_to_hex(val, VAL_MAX, elem->value, elem->value_len))
+            {
+                ESP_LOGE(TAG, "Convert error");
+                free(elem);
+                continue;
+            }
+
+            sprintf(msg, "{\"address\": \"%2X:%2X:%2X:%2X:%2X:%2X\", \"is_notify\": %s, \"val_len\": %hu, \"val\": %s}",
+                    elem->address[0], elem->address[1],
+                    elem->address[2], elem->address[3],
+                    elem->address[4], elem->address[5],
+                    (elem->is_notify == true ? "True" : "False"),
+                    elem->value_len,
+                    val);
+
+            esp_mqtt_client_publish(client, "/ble2mqtt/app/value", msg, strlen(msg), MQTT_QOS, 1);
+
+            free(elem);
+        }
+        else
+        {
+            ESP_LOGE(TAG, "xQueueReceive error");
+        }
+
+        continue;
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

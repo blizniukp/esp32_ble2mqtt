@@ -367,6 +367,25 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
         else
             ESP_LOGI(TAG, "Got indicate");
         esp_log_buffer_hex(TAG, p_data->notify.value, p_data->notify.value_len);
+
+        btle_q_element_t *elem = malloc(sizeof(btle_q_element_t));
+        if (!elem)
+        {
+            ESP_LOGE(TAG, "malloc error!");
+            break;
+        }
+        memcpy(elem->address, p_data->notify.remote_bda, ESP_BD_ADDR_LEN);
+        elem->is_notify = p_data->notify.is_notify;
+        elem->value_len = p_data->notify.value_len;
+        elem->value = malloc(sizeof(elem->value_len));
+        if (!elem->value)
+        {
+            ESP_LOGE(TAG, "malloc error!");
+            break;
+        }
+        memcpy(elem->value, p_data->notify.value, elem->value_len);
+        xQueueSend(ble2mqtt->xQueue, (void *)&elem, (TickType_t)20);
+        xEventGroupSetBits(ble2mqtt->s_event_group, BLE2MQTT_NEW_BTLE_MESSAGE);
     }
     break;
 

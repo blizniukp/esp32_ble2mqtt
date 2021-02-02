@@ -1,4 +1,7 @@
 #include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include "esp_gatt_defs.h"
 #include "freertos/FreeRTOS.h"
 
@@ -104,3 +107,14 @@ bool ble2mqtt_utils_parse_uuid(char *value, esp_bt_uuid_t *m_uuid)
     return false;
 }
 
+bool ble2mqtt_utils_u8_to_hex(char* dest, size_t dest_len, const uint8_t* values, size_t val_len) {
+    if(dest_len < (val_len*2+1))
+        return false;
+    *dest = '\0';
+    while(val_len--) {
+        sprintf(dest, "%02X", *values);
+        dest += 2;
+        ++values;
+    }
+    return true;
+}

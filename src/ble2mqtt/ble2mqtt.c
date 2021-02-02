@@ -15,6 +15,15 @@ static const char *TAG = "ble2mqtt";
 ble2mqtt_t *ble2mqtt_create(void)
 {
     ble2mqtt_t *ble2mqtt = malloc(sizeof(ble2mqtt_t));
+
+    if (!ble2mqtt)
+        return NULL;
+
+    ble2mqtt->xQueue = xQueueCreate(10, sizeof(btle_q_element_t *));
+
+    if (!ble2mqtt->xQueue)
+        return NULL;
+
     return ble2mqtt;
 }
 
