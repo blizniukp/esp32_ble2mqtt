@@ -142,8 +142,13 @@ void vTaskMqtt(void *pvParameters)
     int msg_id;
 
     esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = MQTT_BROKER_URI,
+        .host = MQTT_BROKER_HOST,
+        .port = MQTT_BROKER_PORT,
+        .username = MQTT_USER,
+        .password = MQTT_PASSWORD,
         .user_context = (void *)ble2mqtt,
+        .transport = MQTT_TRANSPORT_OVER_TCP,
+        .protocol_ver = MQTT_PROTOCOL_V_3_1_1
     };
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
