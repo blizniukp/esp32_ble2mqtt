@@ -207,7 +207,7 @@ void vTaskMqtt(void *pvParameters)
                     elem->address[0], elem->address[1],
                     elem->address[2], elem->address[3],
                     elem->address[4], elem->address[5],
-                    (elem->is_notify == true ? "True" : "False"),
+                    (elem->is_notify == true ? "true" : "false"),
                     elem->value_len,
                     val);
 
