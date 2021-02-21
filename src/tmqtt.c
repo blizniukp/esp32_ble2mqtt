@@ -203,7 +203,7 @@ void vTaskMqtt(void *pvParameters)
                 continue;
             }
 
-            sprintf(msg, "{\"address\": \"%2X:%2X:%2X:%2X:%2X:%2X\", \"is_notify\": %s, \"val_len\": %hu, \"val\": %s}",
+            sprintf(msg, "{\"address\": \"%2X:%2X:%2X:%2X:%2X:%2X\", \"is_notify\": %s, \"val_len\": %hu, \"val\": \"%s\"}",
                     elem->address[0], elem->address[1],
                     elem->address[2], elem->address[3],
                     elem->address[4], elem->address[5],
