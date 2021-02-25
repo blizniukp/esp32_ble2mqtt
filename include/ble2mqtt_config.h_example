@@ -15,7 +15,8 @@
 #define MQTT_PASSWORD           "password"
 
 /*      Subscribed topic */
-#define MQTT_TOPIC_SUBSCRIBE "/topic/test"
+#define MQTT_TOPIC_SUBSCRIBE    "/ble2mqtt/dev/#"
+#define MQTT_TOPIC_PUBLISH      "/ble2mqtt/app/"
 /*      QOS */
 #define MQTT_QOS (1)
 #endif
