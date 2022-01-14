@@ -23,6 +23,7 @@ void vTaskDebug(void *pvParameters)
 
     while (1)
     {
+        ESP_LOGI(TAG,"---------------------------------------------");
         bits = xEventGroupGetBits(ble2mqtt->s_event_group);
         ESP_LOGI(TAG, "Wifi: %c, Mqtt: %c", BITCHECK(bits, BLE2MQTT_WIFI_CONNECTED_BIT), BITCHECK(bits, BLE2MQTT_MQTT_CONNECTED_BIT));
 
@@ -60,6 +61,7 @@ void vTaskDebug(void *pvParameters)
             }
             xSemaphoreGive(ble2mqtt->xMutexDevices);
         }
+        ESP_LOGI(TAG,"---------------------------------------------");
         vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 
