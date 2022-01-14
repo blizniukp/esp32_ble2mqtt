@@ -148,8 +148,7 @@ void vTaskMqtt(void *pvParameters)
         .password = MQTT_PASSWORD,
         .user_context = (void *)ble2mqtt,
         .transport = MQTT_TRANSPORT_OVER_TCP,
-        .protocol_ver = MQTT_PROTOCOL_V_3_1_1
-    };
+        .protocol_ver = MQTT_PROTOCOL_V_3_1_1};
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
@@ -199,6 +198,7 @@ void vTaskMqtt(void *pvParameters)
             if (!ble2mqtt_utils_u8_to_hex(val, VAL_MAX, elem->value, elem->value_len))
             {
                 ESP_LOGE(TAG, "Convert error");
+                free(elem->value);
                 free(elem);
                 continue;
             }
@@ -211,9 +211,9 @@ void vTaskMqtt(void *pvParameters)
                     elem->value_len,
                     val);
 
-            esp_mqtt_client_publish(client, "/ble2mqtt/app/value", msg, strlen(msg), MQTT_QOS, 1);
-
+            free(elem->value);
             free(elem);
+            esp_mqtt_client_publish(client, "/ble2mqtt/app/value", msg, strlen(msg), MQTT_QOS, 1);
         }
         else
         {
