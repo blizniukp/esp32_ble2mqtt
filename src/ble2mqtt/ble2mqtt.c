@@ -7,12 +7,13 @@
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_gattc_api.h"
-
+#include "ble2mqtt_config.h"
 #include "ble2mqtt.h"
+#include "b2mconfig.h"
 
 static const char *TAG = "ble2mqtt";
 
-ble2mqtt_t *ble2mqtt_create(void)
+ble2mqtt_t *ble2mqtt_create()
 {
     ble2mqtt_t *ble2mqtt = malloc(sizeof(ble2mqtt_t));
 
@@ -27,10 +28,11 @@ ble2mqtt_t *ble2mqtt_create(void)
     return ble2mqtt;
 }
 
-bool ble2mqtt_init(ble2mqtt_t *ble2mqtt)
+bool ble2mqtt_init(ble2mqtt_t *ble2mqtt, b2mconfig_t *b2mconfig)
 {
     ESP_LOGI(TAG, "Init ble2mqtt_t");
 
+    ble2mqtt->b2mconfig = b2mconfig;
     ble2mqtt->s_event_group = xEventGroupCreate();
     ble2mqtt->xMutexDevices = xSemaphoreCreateMutex();
     if (!ble2mqtt->xMutexDevices)

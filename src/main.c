@@ -10,10 +10,12 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 
 #include "twifi.h"
 #include "tbt.h"
 #include "tmqtt.h"
+#include "tb2mconfig.h"
 #include "ble2mqtt/ble2mqtt.h"
 #ifndef DISABLETDEBUG
 #include "tdebug.h"
@@ -45,33 +47,56 @@ void app_main(void)
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
+
     ESP_ERROR_CHECK(ret);
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    ble2mqtt_t *ble2mqtt = ble2mqtt_create();
-    if (!ble2mqtt)
+    ESP_ERROR_CHECK(gpio_set_direction(GPIO_NUM_4, GPIO_MODE_INPUT));
+    int reset_config = gpio_get_level(GPIO_NUM_4);
+
+    b2mconfig_t *b2mconfig = b2mconfig_create();
+    if (b2mconfig == NULL)
     {
         ESP_LOGE(TAG, "malloc error!");
         while (1)
             ;
     }
-    if (ble2mqtt_init(ble2mqtt) == false)
+    else
     {
-        ESP_LOGE(TAG, "ble2mqtt_init error!");
-        while (1)
-            ;
+        b2mconfig_load(b2mconfig);
     }
 
+    if (reset_config == 1 || b2mconfig->not_initialized)
+    {
+        xTaskCreate(vTaskB2MConfig, "task_b2mconfig", (2048 * 6), (void *)b2mconfig, 8, NULL);
+    }
+    else
+    {
+        ble2mqtt_t *ble2mqtt = ble2mqtt_create();
+        if (!ble2mqtt)
+        {
+            ESP_LOGE(TAG, "malloc error!");
+            while (1)
+                ;
+        }
+        if (ble2mqtt_init(ble2mqtt, b2mconfig) == false)
+        {
+            ESP_LOGE(TAG, "ble2mqtt_init error!");
+            while (1)
+                ;
+        }
+
 #ifndef DISABLETWIFI
-    xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
+        xTaskCreate(vTaskWifi, "task_wifi", (2048 * 6), (void *)ble2mqtt, 8, NULL);
 #endif
 #ifndef DISABLETMQTT
-    xTaskCreate(vTaskMqtt, "task_mqtt", (2048 * 6), (void *)ble2mqtt, 10, NULL);
+        xTaskCreate(vTaskMqtt, "task_mqtt", (2048 * 6), (void *)ble2mqtt, 10, NULL);
 #endif
 #ifndef DISABLETBT
-    xTaskCreate(vTaskBt, "task_bt", (2048 * 6), (void *)ble2mqtt, 12, NULL);
+        xTaskCreate(vTaskBt, "task_bt", (2048 * 6), (void *)ble2mqtt, 12, NULL);
 #endif
 #ifndef DISABLETDEBUG
-    xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);
+        xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);
 #endif
+    }
 }

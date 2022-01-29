@@ -80,12 +80,9 @@ void vTaskWifi(void *pvParameters)
                                                &event_handler,
                                                (void *)ble2mqtt));
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWORD,
-        },
-    };
+    wifi_config_t wifi_config = {0};
+    strcpy((char *)wifi_config.sta.ssid, ble2mqtt->b2mconfig->wifi_ssid);
+    strcpy((char *)wifi_config.sta.password, ble2mqtt->b2mconfig->wifi_password);
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());

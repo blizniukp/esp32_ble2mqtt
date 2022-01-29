@@ -7,6 +7,7 @@
 #include "freertos/event_groups.h"
 #include "esp_gattc_api.h"
 #include "freertos/queue.h"
+#include "b2mconfig.h"
 
 #define BLE2MQTT_WIFI_CONNECTED_BIT BIT0       /* Connected to WiFi */
 #define BLE2MQTT_MQTT_CONNECTED_BIT BIT1       /* Connected to MQTT Broker */
@@ -66,17 +67,19 @@ typedef struct ble2mqtt_def
     uint8_t devices_len; /* Number of items in 'devices' array */
 
     QueueHandle_t xQueue; /* Messages from btle devices */
+
+    b2mconfig_t *b2mconfig; /* Configuration (wifi, mqtt)*/
 } ble2mqtt_t;
 
 /**
  * Create instance of ble2mqtt_t struct
  */
-ble2mqtt_t *ble2mqtt_create(void);
+ble2mqtt_t *ble2mqtt_create();
 
 /**
  * Initialize ble2mqtt struct
  * @return - true if init success
  */
-bool ble2mqtt_init(ble2mqtt_t *ble2mqtt);
+bool ble2mqtt_init(ble2mqtt_t *ble2mqtt, b2mconfig_t *b2mconfig);
 
 #endif

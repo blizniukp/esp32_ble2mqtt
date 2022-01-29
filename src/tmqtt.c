@@ -142,13 +142,13 @@ void vTaskMqtt(void *pvParameters)
     int msg_id;
 
     esp_mqtt_client_config_t mqtt_cfg = {
-        .host = MQTT_BROKER_HOST,
-        .port = MQTT_BROKER_PORT,
-        .username = MQTT_USER,
-        .password = MQTT_PASSWORD,
         .user_context = (void *)ble2mqtt,
         .transport = MQTT_TRANSPORT_OVER_TCP,
         .protocol_ver = MQTT_PROTOCOL_V_3_1_1};
+    mqtt_cfg.host = ble2mqtt->b2mconfig->broker_ip_address;
+    mqtt_cfg.username = ble2mqtt->b2mconfig->broker_username;
+    mqtt_cfg.password = ble2mqtt->b2mconfig->broker_password;
+    mqtt_cfg.port = atoi(ble2mqtt->b2mconfig->broker_port);
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
