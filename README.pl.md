@@ -25,6 +25,8 @@
 </div>
 
 
+*Read this in other language: [English](README.md), [Polski](README.pl.md).*
+
 
 <details>
   <summary>Spis treści</summary>
@@ -45,13 +47,15 @@
 ## O projekcie
 
 
-Prosta bramka pozwalająca na komunikację z maksymalnie 4 urządzeniami Bluetooth jednocześnie. 
+Prosta bramka pozwalająca na komunikację z maksymalnie 4 urządzeniami Bluetooth jednocześnie.
+
 Jest ona wykorzystywana razem z wtyczką do HomeAssistant [ha_addon_ble2mqtt](https://github.com/blizniukp/ha_addon_ble2mqtt). Wtyczka ta umożliwia ponadto konfigurację bramki.
 
 
 Aplikacja bazuje na projekcie: [gattc_multi_connect](https://github.com/espressif/esp-idf/tree/22c82a4e28ec331a3f46e0a8f757f6b535f83cc4/examples/bluetooth/bluedroid/ble/gattc_multi_connect)
 
 Aktualnie urządzenie obsługuje do 4 połączeń bluetooth jednocześnie. W celu zwięszenia ilości należy edytować zmienną CONFIG_BT_ACL_CONNECTIONS (parametr BT/BLE MAX ACL CONNECTIONS w menuconfig). 
+
 **Wartości większe niż 4 nie były jeszcze testowane!**
 
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
@@ -61,7 +65,9 @@ Aktualnie urządzenie obsługuje do 4 połączeń bluetooth jednocześnie. W cel
 
 W projekcie został wykorzystany moduł ESP32-WROOM-32.
 
+
 Dodatkowo można zastosować przycisk oraz rezystor 10kOhm w celu resetowania konfiguracji.
+
 W tym celu należy podłączyć szeregowo przycisk i rezystor pomiędzy zaciski 3v3 oraz pin D4.
 
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
@@ -70,6 +76,7 @@ W tym celu należy podłączyć szeregowo przycisk i rezystor pomiędzy zaciski 
 ## Wgrywanie firmware do ESP32
 
 Firmware do urządzenia można wgrać za pomocą aplikacji [Esp Download Tool](https://www.espressif.com/en/support/download/other-tools)
+
 
 Najnowsza wersja firmware jest dostępna w [Releases](https://github.com/blizniukp/esp32_ble2mqtt/releases)
 
@@ -95,11 +102,14 @@ Naciśnij przycisk `START` aby rozpocząć wgrywanie firmware do urządzenia.
 W momencie pierwszego uruchomienia urządzenia (lub po resecie konfiguracji) tworzony jest hotspot WiFi o następującej nazwie i haśle:
 
 Nazwa sieci: `ble2mqtt`
+
 Hasło to: `12345678`
 
 Po połączeniu z siecią należy przejść na stronę www umożliwiającą konfigurację.
 
+
 Na systemie Linux wystarczy przejść na stronę: `http://ble2mqtt.local`
+
 Na systemie Windows/Android należy użyć adresu: `http://192.168.4.1`
 
 
@@ -109,7 +119,9 @@ Na powyższej stronie należy uzupełnić pola dotyczące konfiguracji WiFi oraz
 
 Gdy wszystkie pola zostaną uzupełnione kliknij na przycisk `Save`. Wprowadzone dane zostaną zapisane do pamięci nieulotnej modułu ESP32.
 
+
 Po zapisie zrestartuj urządzenie. Jeżeli nie wystąpił żaden błąd, to urządzenie powinno połączyć się do sieci WiFi, a następnie do brokera Mqtt.
+
 
 Konfigurację można zrestartować - tak aby ponownie uruchomiony był hotspot WiFi oraz strona z konfiguracją. 
 Wykonuje się to poprzez uruchomienie urządzenia ze zwartym pinem D4 z zasilaniem 3,3V poprzez rezystor 10kOhm. Po uruchomieniu urządzenia należy rozewrzeć w/w połączenie.
@@ -121,14 +133,18 @@ Wykonuje się to poprzez uruchomienie urządzenia ze zwartym pinem D4 z zasilani
 
 Urządzenie subskrybuje topic: `/ble2mqtt/dev/#`.
 
+
 Po podłaczeniu do brokera Mqtt urządzenie publikuje poniższy komunikat i oczekuje na odpowiedź.
 
 topic: `/ble2mqtt/app/getDevList`
+
 payload: `{}`
 
 Poniżej przykład odpowiedzi zawierającej listę dwóch urządzeń Bluetooth:
 
+
 topic: `/ble2mqtt/dev/devList`
+
 payload:
 
     [
@@ -150,7 +166,9 @@ payload:
 
 
 W momencie odebrania danych po Bluetooth są one publikowane w topic `/ble2mqtt/app/value`
+
 W payload znajduje się między innymi adres MAC urządzenia oraz odczytana wartość.
+
 
 Przykład payload:
 
