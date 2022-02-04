@@ -32,9 +32,10 @@
     <li><a href="#o-projekcie">O projekcie</a></li>
     <li><a href="#sprzęt">Sprzęt</a></li>
     <li><a href="#wgrywanie-firmware-do-esp32">Wgrywanie firmware do ESP32</a></li>
-    <li><a href="#pierwsza-konfiguracja">Pierwsza konfiguracja</a></li>
+    <li><a href="#konfiguracja-urządzenia">Konfiguracja urządzenia</a></li>
     <li><a href="#komunikacja-po-mqtt">Komunikacja po Mqtt</a></li>
     <li><a href="#plan-rozwoju">Plan rozwoju</a></li>
+    <li><a href="#licencja">Licencja</a></li>
   </ol>
 </details>
 
@@ -50,7 +51,8 @@ Jest ona wykorzystywana razem z wtyczką do HomeAssistant [ha_addon_ble2mqtt](ht
 
 Aplikacja bazuje na projekcie: [gattc_multi_connect](https://github.com/espressif/esp-idf/tree/22c82a4e28ec331a3f46e0a8f757f6b535f83cc4/examples/bluetooth/bluedroid/ble/gattc_multi_connect)
 
-Aktualnie urządzenie obsługuje do 4 połączeń bluetooth jednocześnie. W celu zwięszenia ilości należy edytować zmienną CONFIG_BT_ACL_CONNECTIONS (parametr BT/BLE MAX ACL CONNECTIONS w menuconfig). Wartości większe niż 4 nie były testowane.
+Aktualnie urządzenie obsługuje do 4 połączeń bluetooth jednocześnie. W celu zwięszenia ilości należy edytować zmienną CONFIG_BT_ACL_CONNECTIONS (parametr BT/BLE MAX ACL CONNECTIONS w menuconfig). 
+**Wartości większe niż 4 nie były jeszcze testowane!**
 
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
 
@@ -67,7 +69,7 @@ W tym celu należy podłączyć szeregowo przycisk i rezystor pomiędzy zaciski 
 
 ## Wgrywanie firmware do ESP32
 
-Firmware do urządzenia można wgrać za pomocą apliakcji [Esp Download Tool](https://www.espressif.com/en/support/download/other-tools)
+Firmware do urządzenia można wgrać za pomocą aplikacji [Esp Download Tool](https://www.espressif.com/en/support/download/other-tools)
 
 Najnowsza wersja firmware jest dostępna w [Releases](https://github.com/blizniukp/esp32_ble2mqtt/releases)
 
@@ -83,10 +85,12 @@ Po uruchomieniu aplikacji `ESP32 DOWNLOAD TOOL` należy wskazać te pliki oraz u
 
 ![esp32_download_tool](/img/esp32_download_tool.png)
 
+Naciśnij przycisk `START` aby rozpocząć wgrywanie firmware do urządzenia.
+
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
 
 
-## Pierwsza konfiguracja
+## Konfiguracja urządzenia
 
 W momencie pierwszego uruchomienia urządzenia (lub po resecie konfiguracji) tworzony jest hotspot WiFi o następującej nazwie i haśle:
 
