@@ -184,7 +184,7 @@ Przykład payload:
 
 ## Plan rozwoju
 
-- [ ] Dodanie diody LED do sygnalizowania stanu
+- [x] Dodanie diody LED do sygnalizowania stanu
 - [ ] Użycie TLS przy komunikacji z brokerem Mqtt
 - [ ] Przesyłanie danych do urządzeń po Bluetooth
 

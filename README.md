@@ -188,7 +188,7 @@ Payload example:
 
 ## Roadmap
 
-- [ ] Adding a LED to indicate device status
+- [x] Adding a LED to indicate device status
 - [ ] Using TLS when communicating with the MQTT broker
 - [ ] Transferring data to Bluetooth devices
 
