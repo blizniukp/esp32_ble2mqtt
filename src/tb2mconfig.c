@@ -40,7 +40,7 @@ b2mconfig_t *b2mconfig_create(void)
     return b2mconfig;
 }
 
-static bool b2mconfig_load_parameter(nvs_handle *handle, char *pname, char **dest)
+static bool b2mconfig_load_parameter_str(nvs_handle *handle, char *pname, char **dest)
 {
     size_t required_size = 0;
     esp_err_t err;
@@ -70,11 +70,23 @@ static bool b2mconfig_load_parameter(nvs_handle *handle, char *pname, char **des
     return true;
 }
 
+static bool b2mconfig_load_parameter_uint32(nvs_handle *handle, char *pname, uint32_t *dest)
+{
+    esp_err_t err = nvs_get_u32(*handle, pname, dest);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Can't read parameter %s from nvm", pname);
+        *dest = 0;
+        return false;
+    }
+    return true;
+}
+
 void b2mconfig_load(b2mconfig_t *b2mconfig)
 {
     nvs_handle handle;
     esp_err_t err;
-    char *init_status;
+    uint32_t init_status;
     b2mconfig->not_initialized = true;
     b2mconfig->wifi_ssid = NULL;
     b2mconfig->wifi_password = NULL;
@@ -88,28 +100,27 @@ void b2mconfig_load(b2mconfig_t *b2mconfig)
     }
     ESP_LOGI(TAG, "nvs_open done");
 
-    if (b2mconfig_load_parameter(&handle, "ws", &b2mconfig->wifi_ssid) == false)
+    if (b2mconfig_load_parameter_str(&handle, "ws", &b2mconfig->wifi_ssid) == false)
         return;
-    if (b2mconfig_load_parameter(&handle, "wp", &b2mconfig->wifi_password) == false)
+    if (b2mconfig_load_parameter_str(&handle, "wp", &b2mconfig->wifi_password) == false)
         return;
-    if (b2mconfig_load_parameter(&handle, "bi", &b2mconfig->broker_ip_address) == false)
+    if (b2mconfig_load_parameter_str(&handle, "bi", &b2mconfig->broker_ip_address) == false)
         return;
-    if (b2mconfig_load_parameter(&handle, "bw", &b2mconfig->broker_password) == false)
+    if (b2mconfig_load_parameter_str(&handle, "bw", &b2mconfig->broker_password) == false)
         return;
-    if (b2mconfig_load_parameter(&handle, "bp", &b2mconfig->broker_port) == false)
+    if (b2mconfig_load_parameter_uint32(&handle, "bp", &b2mconfig->broker_port) == false)
         return;
-    if (b2mconfig_load_parameter(&handle, "bu", &b2mconfig->broker_username) == false)
+    if (b2mconfig_load_parameter_str(&handle, "bu", &b2mconfig->broker_username) == false)
         return;
 
-    if (b2mconfig_load_parameter(&handle, "is", &init_status) == false)
+    if (b2mconfig_load_parameter_uint32(&handle, "is", &init_status) == false)
         return;
-    if (strncmp(init_status, "Y", 1) == 0)
-        b2mconfig->not_initialized = false;
+    b2mconfig->not_initialized = init_status == 0 ? true : false;
     ESP_LOGI(TAG, "The configuration has been loaded");
     ESP_LOGI(TAG, "wifi_ssid: \'%s\'", b2mconfig->wifi_ssid);
     ESP_LOGI(TAG, "wifi_password: \'%s\'", b2mconfig->wifi_password);
     ESP_LOGI(TAG, "broker_ip_address: \'%s\'", b2mconfig->broker_ip_address);
-    ESP_LOGI(TAG, "broker_port: \'%s\'", b2mconfig->broker_port);
+    ESP_LOGI(TAG, "broker_port: \'%u\'", b2mconfig->broker_port);
     ESP_LOGI(TAG, "broker_username: \'%s\'", b2mconfig->broker_username);
     ESP_LOGI(TAG, "broker_password: \'%s\'", b2mconfig->broker_password);
 }
@@ -131,9 +142,9 @@ void b2mconfig_save(b2mconfig_t *b2mconfig)
     ESP_ERROR_CHECK(nvs_set_str(handle, "wp", b2mconfig->wifi_password));
     ESP_ERROR_CHECK(nvs_set_str(handle, "bi", b2mconfig->broker_ip_address));
     ESP_ERROR_CHECK(nvs_set_str(handle, "bw", b2mconfig->broker_password));
-    ESP_ERROR_CHECK(nvs_set_str(handle, "bp", b2mconfig->broker_port));
+    ESP_ERROR_CHECK(nvs_set_u32(handle, "bp", b2mconfig->broker_port));
     ESP_ERROR_CHECK(nvs_set_str(handle, "bu", b2mconfig->broker_username));
-    ESP_ERROR_CHECK(nvs_set_str(handle, "is", "Y"));
+    ESP_ERROR_CHECK(nvs_set_u32(handle, "is", (uint32_t)1));
     ESP_LOGI(TAG, "Commit changes");
     ESP_ERROR_CHECK(nvs_commit(handle));
 }
@@ -282,8 +293,10 @@ bool parse_and_set_config(b2mconfig_t *b2mconfig, char *content)
         }
         else if (strncmp(token, "bp", 2) == 0)
         {
-            config = &b2mconfig->broker_port;
-            config_size = 6;
+            token = strtok(NULL, delimit);
+            b2mconfig->broker_port=atoi(token);
+            token = strtok(NULL, delimit);
+            continue;
         }
         else if (strncmp(token, "bu", 2) == 0)
         {
@@ -321,13 +334,12 @@ bool parse_and_set_config(b2mconfig_t *b2mconfig, char *content)
             return false;
         }
         urldecode2(*config, token);
-        //strncpy(*config, token, config_size);
         token = strtok(NULL, delimit);
     }
     ESP_LOGI(TAG, "wifi_ssid: \'%s\'", b2mconfig->wifi_ssid);
     ESP_LOGI(TAG, "wifi_password: \'%s\'", b2mconfig->wifi_password);
     ESP_LOGI(TAG, "broker_ip_address: \'%s\'", b2mconfig->broker_ip_address);
-    ESP_LOGI(TAG, "broker_port: \'%s\'", b2mconfig->broker_port);
+    ESP_LOGI(TAG, "broker_port: \'%u\'", b2mconfig->broker_port);
     ESP_LOGI(TAG, "broker_username: \'%s\'", b2mconfig->broker_username);
     ESP_LOGI(TAG, "broker_password: \'%s\'", b2mconfig->broker_password);
 
@@ -448,7 +460,7 @@ void vTaskB2MConfig(void *pvParameters)
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    httpd_handle_t http_server = start_webserver(b2mconfig);
+    start_webserver(b2mconfig);
 
     while (1)
     {

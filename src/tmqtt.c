@@ -148,7 +148,7 @@ void vTaskMqtt(void *pvParameters)
     mqtt_cfg.host = ble2mqtt->b2mconfig->broker_ip_address;
     mqtt_cfg.username = ble2mqtt->b2mconfig->broker_username;
     mqtt_cfg.password = ble2mqtt->b2mconfig->broker_password;
-    mqtt_cfg.port = atoi(ble2mqtt->b2mconfig->broker_port);
+    mqtt_cfg.port = ble2mqtt->b2mconfig->broker_port;
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
