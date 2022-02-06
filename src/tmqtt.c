@@ -14,6 +14,7 @@
 #include "ble2mqtt/ble2mqtt.h"
 #include "ble2mqtt/ble2mqtt_utils.h"
 #include "ble2mqtt_config.h"
+#include "led_indicator.h"
 
 static const char *TAG = "tmqtt";
 #define VAL_MAX (40)
@@ -214,6 +215,7 @@ void vTaskMqtt(void *pvParameters)
             free(elem->value);
             free(elem);
             esp_mqtt_client_publish(client, "/ble2mqtt/app/value", msg, strlen(msg), MQTT_QOS, 1);
+            led_indicator_off();
         }
         else
         {

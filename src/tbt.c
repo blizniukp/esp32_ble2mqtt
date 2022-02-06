@@ -19,6 +19,7 @@
 
 #include "ble2mqtt/ble2mqtt.h"
 #include "tbt.h"
+#include "led_indicator.h"
 
 #define INVALID_HANDLE 0
 
@@ -361,6 +362,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     case ESP_GATTC_NOTIFY_EVT: //10
     {
         ESP_LOGD(TAG, "NOTIFY_EVT");
+        led_indicator_on();
 
         if (p_data->notify.is_notify)
             ESP_LOGI(TAG, "Got notify");
@@ -616,9 +618,7 @@ void vTaskBt(void *pvParameters)
 
     while (1)
     {
-        //#ifndef DISABLETASKMSG
         ESP_LOGD(TAG, "Task bt. is_scanning: %s", (is_scanning == true ? "Y" : "N"));
-        //#endif
 
         if (!(xEventGroupGetBits(ble2mqtt->s_event_group) & BLE2MQTT_MQTT_GOT_BLEDEV_LIST_BIT))
         {

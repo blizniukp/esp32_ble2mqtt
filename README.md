@@ -73,6 +73,8 @@ In addition, you can use a button and a 10KOHM resistor to reset the configurati
 
 To do this, connect the button and the resistor between the 3V3 and PIN D4 terminals.
 
+The built-in LED turns on when Bluetooth data is received, and turns off when an MQTT message is sent.
+
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
 
 

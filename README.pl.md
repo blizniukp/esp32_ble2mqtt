@@ -70,6 +70,8 @@ Dodatkowo można zastosować przycisk oraz rezystor 10kOhm w celu resetowania ko
 
 W tym celu należy podłączyć szeregowo przycisk i rezystor pomiędzy zaciski 3v3 oraz pin D4.
 
+Wbudowana dioda LED zapalana zostaje w momencie odebrania danych po Bluetooth, a gaszona po wysłaniu komunikatu MQTT.
+
 <p align="right">(<a href="#top">powrót do góry</a>)</p>
 
 
