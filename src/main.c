@@ -17,10 +17,10 @@
 #include "tmqtt.h"
 #include "tb2mconfig.h"
 #include "ble2mqtt/ble2mqtt.h"
-#include "led_indicator.h"
 #ifndef DISABLETDEBUG
 #include "tdebug.h"
 #endif
+#include "tled.h"
 
 static const char *TAG = "main";
 
@@ -55,8 +55,6 @@ void app_main(void)
     ESP_ERROR_CHECK(gpio_set_direction(GPIO_NUM_4, GPIO_MODE_INPUT));
     int reset_config = gpio_get_level(GPIO_NUM_4);
 
-    led_indicator_init();
-
     b2mconfig_t *b2mconfig = b2mconfig_create();
     if (b2mconfig == NULL)
     {
@@ -71,7 +69,8 @@ void app_main(void)
 
     if (reset_config == 1 || b2mconfig->not_initialized)
     {
-        led_indicator_on();
+        xTaskCreate(vTaskLed, "task_led", 2048, NULL, 20, NULL);
+        tled_on();
         xTaskCreate(vTaskB2MConfig, "task_b2mconfig", (2048 * 6), (void *)b2mconfig, 8, NULL);
     }
     else
@@ -102,5 +101,6 @@ void app_main(void)
 #ifndef DISABLETDEBUG
         xTaskCreate(vTaskDebug, "task_debug", 2048, (void *)ble2mqtt, 20, NULL);
 #endif
+        xTaskCreate(vTaskLed, "task_led", 2048, (void *)ble2mqtt, 20, NULL);
     }
 }
